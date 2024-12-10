@@ -6,8 +6,22 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from gpt4all import GPT4All
 import hashlib
+import matplotlib.pyplot as plt
+import re
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+CATEGORY_KEYWORDS = {
+    "Army": ["גדוד", "military", "army", "חיל", "קרבי", "מילואים", "זום"],
+    "Work": ["LinkedIn", "job", "recruitment", "career", "משרה", "עבודה", "profile", "invitation"],
+    "Bills": ["invoice", "bill", "payment", "receipt", "חשבון", "חשמל", "שירות", "אישור"],
+    "Personal": ["birthday", "party", "family", "יום הולדת", "משפחה"],
+    "Shopping": ["order", "purchase", "cart", "עגלה", "רכישה", "הזמנה"],
+    "University": ["presentation", "deck", "class", "assignment", "university", "אוניברסיטה"],
+    "Entertainment": ["movie", "concert", "festival", "event", "זום", "אירוע", "invitation"],
+    "Notifications": ["notification", "alert", "reminder", "התראה", "תזכורת"],
+    "Promotions": ["sale", "discount", "offer", "מבצע", "הנחה", "הצעה"],
+}
 
 def authenticate():
     """Authenticate and return Gmail API credentials."""
@@ -51,48 +65,36 @@ def generate_cache_key(subject, sender):
     data = f"{subject}:{sender}"
     return hashlib.sha256(data.encode()).hexdigest()
 
-def parse_llm_response(response):
-    """
-    Parse the LLM response and extract Category, Priority, and Requires Response fields.
-    """
-    category = "Unknown"
-    priority = "Normal"
-    requires_response = "No"
+def categorize_email(subject, sender):
+    """Categorize email based on keywords and specific sender-based rules."""
+    sender_lower = sender.lower()
+    subject_lower = subject.lower()
 
-    # Debug the raw response
-    print(f"Raw response from LLM:\n{response}")
+    # Sender-based rules
+    if "iec.co.il" in sender_lower:
+        return "Bills"
+    if "linkedin.com" in sender_lower:
+        return "Work"
+    if "@gmail.com" in sender_lower:
+        return "Personal"
+    if "idf.il" in sender_lower or "זום גדוד" in subject_lower:
+        return "Army"
 
-    # Filter and extract relevant lines
-    lines = [line.strip() for line in response.split("\n") if ":" in line]
-    for line in lines:
-        if "Category:" in line:
-            category = line.split(":", 1)[1].strip()
-        elif "Priority:" in line:
-            priority = line.split(":", 1)[1].strip()
-        elif "Requires Response:" in line:
-            requires_response = line.split(":", 1)[1].strip()
+    # Keyword-based categorization
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        for keyword in keywords:
+            if re.search(rf"\b{re.escape(keyword.lower())}\b", subject_lower):
+                return category
 
-    return category, priority, requires_response
+    # Fallback to Personal if no category matches
+    return "Personal"
 
-def validate_response(category, priority, requires_response):
-    """
-    Validate the extracted values and ensure they are within the expected ranges.
-    """
-    valid_categories = {"Work", "Bills", "Personal", "Shopping", "Notifications", "Promotions", "Entertainment", "School", "Travel", "Other"}
-    valid_priorities = {"Urgent", "Important", "Normal", "Low"}
-    valid_responses = {"Yes", "No"}
-
+def validate_category(category):
+    """Ensure the category is valid and fallback if necessary."""
+    valid_categories = set(CATEGORY_KEYWORDS.keys())
     if category not in valid_categories:
-        print(f"Invalid category: {category}. Defaulting to 'Unknown'.")
-        category = "Unknown"
-    if priority not in valid_priorities:
-        print(f"Invalid priority: {priority}. Defaulting to 'Normal'.")
-        priority = "Normal"
-    if requires_response not in valid_responses:
-        print(f"Invalid response: {requires_response}. Defaulting to 'No'.")
-        requires_response = "No"
-
-    return category, priority, requires_response
+        return "Personal"
+    return category
 
 def process_email_with_cache(subject, sender, llm, redis_client):
     """
@@ -103,35 +105,49 @@ def process_email_with_cache(subject, sender, llm, redis_client):
     # Check if the response is already cached
     cached_response = redis_client.get(cache_key)
     if cached_response:
-        print(f"Cached response: {cached_response}")
         try:
             category, priority, requires_response = cached_response.split('|')
+            category = validate_category(category)
             return category, priority, requires_response
-        except ValueError as e:
-            print(f"Error unpacking cached response: {e}. Cached response: {cached_response}")
+        except ValueError:
             redis_client.delete(cache_key)
 
-    # If not cached or cache is invalid, query the LLM
-    prompt = f"""
-    You are an AI email classifier. Analyze the following email details:
+    # Use generalized keyword mapping for category
+    category = categorize_email(subject, sender)
 
+    # Query the LLM for priority and response requirement
+    prompt = f"""
+    Analyze the following email details:
     Subject: {subject}
     Sender: {sender}
 
-    Provide the result exactly in this format:
-    Category: <One of: Work, Bills, Personal, Shopping, Notifications, Promotions, Entertainment, School, Travel, Other>
+    Provide results in this format:
     Priority: <One of: Urgent, Important, Normal, Low>
     Requires Response: <Yes or No>
-
-    Do not add extra text or comments. Only return the three fields exactly as described.
     """
     response = llm.generate(prompt, max_tokens=100).strip()
-    category, priority, requires_response = parse_llm_response(response)
-    category, priority, requires_response = validate_response(category, priority, requires_response)
+    lines = response.split("\n")
+    priority = "Normal"
+    requires_response = "No"
 
-    # Cache the response for 4 hours
+    for line in lines:
+        if "Priority:" in line:
+            priority = line.split(":", 1)[1].strip()
+        elif "Requires Response:" in line:
+            requires_response = line.split(":", 1)[1].strip()
+
+    # Cache the results
     redis_client.setex(cache_key, 4 * 60 * 60, f"{category}|{priority}|{requires_response}")
     return category, priority, requires_response
+
+def plot_email_categories(categories_count):
+    """Plot a pie chart of email categories."""
+    labels = list(categories_count.keys())
+    sizes = list(categories_count.values())
+    plt.figure(figsize=(8, 6))
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+    plt.title("Email Categories Distribution")
+    plt.show(block=True)
 
 def fetch_emails():
     """Fetch and process emails from Gmail."""
@@ -152,6 +168,8 @@ def fetch_emails():
         llm = load_gpt4all_model()
         redis_client = connect_to_redis()
 
+        categories_count = {}
+
         for msg in messages:
             msg_details = service.users().messages().get(userId='me', id=msg['id'], format='full').execute()
             headers = msg_details.get('payload', {}).get('headers', [])
@@ -159,13 +177,17 @@ def fetch_emails():
             sender = next((header['value'] for header in headers if header['name'] == 'From'), 'Unknown Sender')
             
             category, priority, requires_response = process_email_with_cache(subject, sender, llm, redis_client)
-            
+            categories_count[category] = categories_count.get(category, 0) + 1
+
             print(f"From: {sender}")
             print(f"Subject: {subject}")
             print(f"Category: {category}")
             print(f"Priority: {priority}")
             print(f"Requires Response: {requires_response}")
             print()
+        
+        # Plot the categories distribution
+        plot_email_categories(categories_count)
     
     except Exception as e:
         print(f"An error occurred: {e}")
