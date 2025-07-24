@@ -1,58 +1,52 @@
-from gpt4all import GPT4All
-from helpers.cache import generate_cache_key
-from helpers.classifier import categorize_email, validate_category
+from openai import OpenAI
+from helpers.classifier import validate_category
 
-def load_gpt4all_model(model_name="Phi-3-mini-4k-instruct.Q4_0.gguf") -> GPT4All:
-    """Load the GPT4All model by name."""
-    return GPT4All(model_name)
+def generate_cache_key(subject: str, sender: str) -> str:
+    return f"{subject}|{sender}"
 
-def process_email_with_cache(subject: str, sender: str, llm, redis_client):
-    """
-    Check Redis cache for the LLM response. If not found, query the LLM and cache the response.
-    """
+def process_email_with_cache(subject: str, sender: str, redis_client):
     cache_key = generate_cache_key(subject, sender)
 
-    # Check if the response is already cached
     cached_response = redis_client.get(cache_key)
     if cached_response:
+        if isinstance(cached_response, bytes):
+            cached_response = cached_response.decode("utf-8")
         try:
             category, priority, requires_response = cached_response.split('|')
-            category = validate_category(category)
-            return category, priority, requires_response
+            return validate_category(category), priority, requires_response
         except ValueError:
-            redis_client.delete(cache_key)
+            pass  # Corrupted format, fall back to fresh call
 
-    # Use keyword logic for category
-    category = categorize_email(subject, sender)
+    # If cache miss or corrupted
+    openai_client = OpenAI()
+    chat_response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful email assistant."},
+            {"role": "user", "content": f"Classify the following email:\nSubject: {subject}\nSender: {sender}\n\n"
+                                        "Return response with two fields:\n"
+                                        "Priority: Low/Normal/Urgent/Important\n"
+                                        "Requires Response: Yes/No"}
+        ]
+    )
 
-    # Query the LLM
-    prompt = f"""
-    Analyze the following email details:
-    Subject: {subject}
-    Sender: {sender}
+    content = chat_response.choices[0].message["content"]
 
-    Provide results in this format:
-    Priority: <One of: Urgent, Important, Normal, Low>
-    Requires Response: <Yes or No>
-    """
-    response = llm.generate(prompt, max_tokens=100).strip()
-    lines = response.split("\n")
-    priority = "Normal"
-    requires_response = "No"
+    lines = content.splitlines()
+    priority = ""
+    requires_response = ""
 
     for line in lines:
-        if "Priority:" in line:
+        if line.startswith("Priority:"):
             priority = line.split(":", 1)[1].strip()
-        elif "Requires Response:" in line:
+        elif line.startswith("Requires Response:"):
             requires_response = line.split(":", 1)[1].strip()
 
-    # Sanitize LLM output
-    valid_priorities = ["Urgent", "Important", "Normal", "Low"]
-    priority = next((p for p in valid_priorities if p.lower() in priority.lower()), "Normal")
+    # Dummy logic to choose category
+    category = "Work" if "job" in subject.lower() else "Personal"
 
-    valid_responses = ["Yes", "No"]
-    requires_response = next((r for r in valid_responses if r.lower() in requires_response.lower()), "No")
+    # Cache it
+    value = f"{category}|{priority}|{requires_response}"
+    redis_client.setex(cache_key, 3600, value)
 
-    # Cache the results
-    redis_client.setex(cache_key, 4 * 60 * 60, f"{category}|{priority}|{requires_response}")
-    return category, priority, requires_response
+    return validate_category(category), priority, requires_response
