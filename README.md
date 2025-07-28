@@ -11,22 +11,42 @@ Gmail AI Helper retrieves your ten most recent emails (subject + sender), assi
 ---
 
 ## Key Advantages
-- **Local‑only AI** – GPT4All runs entirely on‑device, so your email content remains private.  
-- **Redis caching** – Avoids repeated LLM calls for the same messages, speeding up future executions.  
-- **Clean CLI experience** – One command fetches, classifies, and plots.  
-- **Modular architecture** – Each concern (auth, cache, LLM, visuals) lives in its own helper module.  
-- **Full test suite** – Pytest covers every helper plus an end‑to‑end run.
+- **🔒 Privacy‑Focused**  
+  All email content is processed locally (Redis + local cache). No emails are sent or stored externally.
+
+- **🧠 Smart Classification**  
+  Combines OpenAI embeddings with keyword rules to maximize accuracy and fallback reliability.
+
+- **⚡ Blazing Fast**  
+  Uses Redis to cache emails and embeddings — avoids redundant API calls and speeds up repeated runs.
+
+- **📊 Visual Insights**  
+  Instantly generates a pie chart showing the distribution of your email categories.
+
+- **🧪 Fully Tested**  
+  Includes unit tests for every component and integration test for full pipeline verification.
+
+- **🔌 Plug-and-Play**  
+  Easy setup using `.env` or environment variables. Works out of the box after Gmail auth.
 
 ---
 
-## Technologies Used
-| Purpose            | Library / Tool                       |
-|--------------------|--------------------------------------|
-| Gmail API access   | `google-api-python-client`, `google-auth-oauthlib` |
-| Local LLM          | `gpt4all`                            |
-| Caching            | `redis` (via `redis-py`)             |
-| Charts             | `matplotlib`                         |
-| Testing            | `pytest`                             |
+## 🛠 Technologies Used
+
+<div align="center">
+
+| Category        | Technology                             |
+|----------------|-----------------------------------------|
+| Programming     | Python 3.10+                           |
+| APIs            | OpenAI API (embeddings + GPT models)  |
+| Email Access    | Gmail API via Google OAuth             |
+| Caching         | Redis                                  |
+| Data Format     | JSON, Pickle                           |
+| Visualization   | Matplotlib (pie chart)                 |
+| Environment     | Python-dotenv (.env config)            |
+| Testing         | Pytest                                 |
+
+</div>
 
 ---
 
@@ -66,6 +86,7 @@ First run will launch a browser window for Gmail consent; a token.json will be s
 ---
 
 ## Usage
+
 ```bash
 python main.py
 ```
