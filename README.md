@@ -36,6 +36,8 @@ cd gmail‑ai‑helper
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
+---
+
 ## Configuration
 
 Create a Google Cloud OAuth 2.0 Client (Desktop) and download credentials.json.
@@ -49,6 +51,8 @@ export MODEL_PATH="/abs/path/Phi-3-mini-4k-instruct.Q4_0.gguf"
 
 First run will launch a browser window for Gmail consent; a token.json will be stored locally for future runs.
 
+---
+
 ## Usage
 python main.py
 
@@ -59,9 +63,13 @@ CLI steps:
 - Classify via GPT4All (cached when possible) 
 - Print results and open pie‑chart window
 
+---
+
 ## Testing
 pytest -s
 Unit tests cover every helper module plus a mocked integration test for the full pipeline.
+
+---
 
 ## Contributing
 
