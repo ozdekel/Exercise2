@@ -37,7 +37,12 @@ def cosine_similarity(vec1, vec2):
         return 0
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-def embedding_based_category(subject: str, sender: str) -> str | None:
+def score_keyword_match(subject: str, sender: str, category: str) -> float:
+    text = f"{subject} {sender}".lower()
+    keywords = CATEGORY_KEYWORDS.get(category, [])
+    return sum(1 for kw in keywords if kw.lower() in text) * 0.02  # each match adds 0.02 to score
+
+def combined_category(subject: str, sender: str) -> str | None:
     if openai_client is None:
         return None
 
@@ -53,11 +58,15 @@ def embedding_based_category(subject: str, sender: str) -> str | None:
         if labeled_vectors is None:
             return None
 
-        best_match = max(
-            labeled_vectors,
-            key=lambda lv: cosine_similarity(email_vector, lv["embedding"])
-        )
-        return best_match["category"]
+        scored = []
+        for item in labeled_vectors:
+            sim = cosine_similarity(email_vector, item["embedding"])
+            boost = score_keyword_match(subject, sender, item["category"])
+            scored.append((sim + boost, item["category"]))
+
+        best_match = max(scored, key=lambda x: x[0])
+        return best_match[1]
+
     except Exception:
         return None
 
@@ -65,24 +74,15 @@ def keyword_based_category(subject: str, sender: str) -> str:
     sender_lower = sender.lower()
     subject_lower = subject.lower()
 
-    if "iec.co.il" in sender_lower:
-        return "Bills"
-    if "linkedin.com" in sender_lower:
-        return "Work"
-    if "@gmail.com" in sender_lower:
-        return "Personal"
-    if "idf.il" in sender_lower or "זום גדוד" in subject_lower:
-        return "Army"
-
     for category, keywords in CATEGORY_KEYWORDS.items():
         for keyword in keywords:
-            if re.search(rf"\b{re.escape(keyword.lower())}\b", subject_lower):
+            if keyword.lower() in subject_lower or keyword.lower() in sender_lower:
                 return category
 
     return "Personal"
 
 def categorize_email(subject: str, sender: str) -> str:
-    category = embedding_based_category(subject, sender)
+    category = combined_category(subject, sender)
     if category is not None:
         return category
     return keyword_based_category(subject, sender)

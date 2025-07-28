@@ -4,53 +4,83 @@ Classify your recent Gmail emails into categories using OpenAI embeddings, cache
 
 ---
 
-## Overview
+## Overview
 
 Gmail AI Helper retrieves your ten most recent emails (subject + sender), assigns each to a category such as **Work**, **Personal** or **Promotions**, stores the results for quick repeat runs, and displays a clear chart of the breakdown. All processing happens on your machine—no email data ever leaves your device.
 
 ---
 
-## Key Advantages
-- **🔒 Privacy‑Focused**  
+## Key Advantages
+- **Privacy‑Focused**  
   All email content is processed locally (Redis + local cache). No emails are sent or stored externally.
 
-- **🧠 Smart Classification**  
+- **Smart Classification**  
   Combines OpenAI embeddings with keyword rules to maximize accuracy and fallback reliability.
 
-- **⚡ Blazing Fast**  
+- **Blazing Fast**  
   Uses Redis to cache emails and embeddings — avoids redundant API calls and speeds up repeated runs.
 
-- **📊 Visual Insights**  
+- **Visual Insights**  
   Instantly generates a pie chart showing the distribution of your email categories.
 
-- **🧪 Fully Tested**  
+- **Fully Tested**  
   Includes unit tests for every component and integration test for full pipeline verification.
 
-- **🔌 Plug-and-Play**  
+- **Plug-and-Play**  
   Easy setup using `.env` or environment variables. Works out of the box after Gmail auth.
 
 ---
 
-## 🛠 Technologies Used
+## Technologies Used
 
-<div align="center">
+<table>
+  <thead>
+    <tr>
+      <th style="text-align:center">Category</th>
+      <th style="text-align:center">Technology</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align:center">Programming</td>
+      <td style="text-align:center">Python 3.10+</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">APIs</td>
+      <td style="text-align:center">OpenAI API (embeddings + GPT models)</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Email Access</td>
+      <td style="text-align:center">Gmail API via Google OAuth</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Caching</td>
+      <td style="text-align:center">Redis</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Data Format</td>
+      <td style="text-align:center">JSON, Pickle</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Visualization</td>
+      <td style="text-align:center">Matplotlib (pie chart)</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Environment</td>
+      <td style="text-align:center">Python-dotenv (.env config)</td>
+    </tr>
+    <tr>
+      <td style="text-align:center">Testing</td>
+      <td style="text-align:center">Pytest</td>
+    </tr>
+  </tbody>
+</table>
 
-| Category        | Technology                             |
-|----------------|-----------------------------------------|
-| Programming     | Python 3.10+                           |
-| APIs            | OpenAI API (embeddings + GPT models)  |
-| Email Access    | Gmail API via Google OAuth             |
-| Caching         | Redis                                  |
-| Data Format     | JSON, Pickle                           |
-| Visualization   | Matplotlib (pie chart)                 |
-| Environment     | Python-dotenv (.env config)            |
-| Testing         | Pytest                                 |
 
-</div>
 
 ---
 
-## Installation
+## Installation
 
 1. Clone the repositoy :
 ```bash
@@ -85,7 +115,7 @@ First run will launch a browser window for Gmail consent; a token.json will be s
 
 ---
 
-## Usage
+## Usage
 
 ```bash
 python main.py
@@ -99,7 +129,7 @@ CLI steps:
 
 ---
 
-## Testing
+## Testing
 
 ```bash
 pytest -s
@@ -108,7 +138,7 @@ Unit tests cover every helper module plus a mocked integration test for the full
 
 ---
 
-# Contributing
+## Contributing
 
 Fork ➜ create feature branch
 
@@ -116,6 +146,6 @@ Write code and tests
 
 Submit pull request explaining the change
 
-## 📄 License
+## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.

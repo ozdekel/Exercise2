@@ -1,15 +1,19 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+from helpers import classifier
+classifier.openai_client = None  # Disable embedding logic for consistent test results
 import pytest
 import pickle
 from helpers.classifier import (
-    keyword_based_category as categorize_email,
+    combined_category,
+    keyword_based_category,
+    categorize_email,
     validate_category,
-    embedding_based_category as classify_with_embedding
 )
 import helpers.classifier as classifier_module
+from main import classify_with_embedding
+
 
 
 @pytest.mark.parametrize("subject,sender,expected", [
