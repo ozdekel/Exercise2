@@ -1,0 +1,152 @@
+[
+  {
+    "subject": "Invoice for July electricity bill",
+    "from": "billing@iec.co.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "Zoom meeting invitation for team sync",
+    "from": "teamlead@startup.com",
+    "category": "Work"
+  },
+  {
+    "subject": "גדוד תרגיל חטיבתי - עדכון חשוב",
+    "from": "idf.notifier@army.gov.il",
+    "category": "Army"
+  },
+  {
+    "subject": "Welcome to Canva – Create stunning designs",
+    "from": "noreply@canva.com",
+    "category": "University"
+  },
+  {
+    "subject": "Important tax documents enclosed",
+    "from": "notifications@tax.gov.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "You have a new message from LinkedIn",
+    "from": "notifications-noreply@linkedin.com",
+    "category": "Work"
+  },
+  {
+    "subject": "תזכורת על תשלום חוב מים",
+    "from": "municipality@city.gov.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "Draft response to your legal request",
+    "from": "support@lawoffice.com",
+    "category": "Legal"
+  },
+  {
+    "subject": "הצעת עבודה חדשה מחברת הייטק",
+    "from": "jobs@startup.co.il",
+    "category": "Work"
+  },
+  {
+    "subject": "מצגת סיכום הקורס מבית הספר לניהול",
+    "from": "professor@uni.ac.il",
+    "category": "University"
+  },
+  {
+    "subject": "מכתב קריאה לשירות מילואים",
+    "from": "idf-reserves@army.gov.il",
+    "category": "Army"
+  },
+  {
+    "subject": "New weekly newsletter: Top industry insights",
+    "from": "updates@newsletter.com",
+    "category": "Work"
+  },
+  {
+    "subject": "אישור על תשלום קנס חנייה",
+    "from": "tickets@tel-aviv.gov.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "מילואים - שינוי מקום כינוס",
+    "from": "reservist@idf.gov.il",
+    "category": "Army"
+  },
+  {
+    "subject": "New assignment uploaded for Data Structures",
+    "from": "cs101@uni.ac.il",
+    "category": "University"
+  },
+  {
+    "subject": "מוזמן להצטרף לקורס אקסל",
+    "from": "info@courses.co.il",
+    "category": "University"
+  },
+  {
+    "subject": "Weekly activity report for your account",
+    "from": "reports@analytics.com",
+    "category": "Work"
+  },
+  {
+    "subject": "קבלה עבור תשלום חשבון גז",
+    "from": "billing@gas.co.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "תחזית כלכלית חודשית",
+    "from": "research@financeworld.com",
+    "category": "Work"
+  },
+  {
+    "subject": "זימון למבחן בקורס מבוא לתכנות",
+    "from": "cs-exams@uni.ac.il",
+    "category": "University"
+  },
+  {
+    "subject": "מכתב הסברה מהביטוח הלאומי",
+    "from": "support@btl.gov.il",
+    "category": "Legal"
+  },
+  {
+    "subject": "Great job opportunity for you",
+    "from": "recruiting@globaltech.com",
+    "category": "Work"
+  },
+  {
+    "subject": "חשבונית תשלום עבור ביטוח רכב",
+    "from": "billing@insurance.co.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "מילואים: שיחת זום לקראת גיוס",
+    "from": "logistics@idf.gov.il",
+    "category": "Army"
+  },
+  {
+    "subject": "תקנון חדש - הסכם שכירות",
+    "from": "lawoffice@attorney.co.il",
+    "category": "Legal"
+  },
+  {
+    "subject": "Course registration confirmation",
+    "from": "admin@uni.ac.il",
+    "category": "University"
+  },
+  {
+    "subject": "עדכון אודות תהליך הקבלה",
+    "from": "hr@company.co.il",
+    "category": "Work"
+  },
+  {
+    "subject": "חשבונית עבור שירותי תקשורת",
+    "from": "billing@isp.co.il",
+    "category": "Bills"
+  },
+  {
+    "subject": "פרטים על צו גיוס מיוחד",
+    "from": "notifications@idf.gov.il",
+    "category": "Army"
+  },
+  {
+    "subject": "הסכם חדש נשלח לעיונך",
+    "from": "legal@company.com",
+    "category": "Legal"
+  }
+]

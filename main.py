@@ -1,51 +1,81 @@
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pickle
+from collections import Counter
+from helpers.auth import authenticate
+from helpers.cache import connect_to_redis, process_email_with_cache
+from helpers.visualizer import plot_email_categories
+from helpers.classifier import categorize_email
+from openai import OpenAI
+from dotenv import load_dotenv
 
-import pytest
-from unittest.mock import patch, MagicMock
-from main import fetch_emails
+load_dotenv()
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-@patch("main.plot_email_categories")
-@patch("main.process_email_with_cache")
-@patch("main.connect_to_redis")
-@patch("main.authenticate")
-@patch("main.build")
-def test_main_run_end_to_end(mock_build, mock_authenticate, mock_connect_to_redis,
-                             mock_process_email_with_cache, mock_plot_chart):
-    # Mock credentials
-    mock_creds = MagicMock()
-    mock_authenticate.return_value = mock_creds
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_PATH = "data/email_embeddings.pkl"
 
-    # Setup Gmail service mock chain
-    mock_service = MagicMock()
-    mock_build.return_value = mock_service
 
-    mock_users = MagicMock()
-    mock_messages = MagicMock()
-    mock_list = MagicMock()
+def embed_text(text: str) -> list[float]:
+    """Generate embedding for a given text using OpenAI."""
+    response = openai_client.embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text
+    )
+    return response.data[0].embedding
 
-    mock_service.users.return_value = mock_users
-    mock_users.messages.return_value = mock_messages
-    mock_messages.list.return_value = mock_list
-    mock_list.execute.return_value = {
-        'messages': [{'id': '111'}, {'id': '222'}]
-    }
 
-    mock_messages.get.side_effect = lambda userId, id, format: {
-        'payload': {
-            'headers': [
-                {'name': 'Subject', 'value': f'Test Subject {id}'},
-                {'name': 'From', 'value': f'sender{id}@mail.com'}
-            ]
-        }
-    }
+def cosine_similarity(vec1, vec2):
+    """Compute cosine similarity between two vectors."""
+    from numpy import dot
+    from numpy.linalg import norm
+    return dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
-    # Mock Redis and classification
-    mock_connect_to_redis.return_value = MagicMock()
-    mock_process_email_with_cache.return_value = ("Work", "Important", "Yes")
 
+def load_labeled_embeddings():
+    with open(EMBEDDING_PATH, "rb") as f:
+        return pickle.load(f)
+
+
+def classify_with_embedding(subject: str, sender: str) -> str:
+    """Classify an email using embedding similarity to labeled examples."""
+    try:
+        labeled = load_labeled_embeddings()
+        email_text = f"{sender} {subject}"
+        email_vec = embed_text(email_text)
+
+        similarities = [(cosine_similarity(email_vec, item["embedding"]), item["category"])
+                        for item in labeled]
+        best_match = max(similarities, key=lambda x: x[0])
+        return best_match[1]
+    except Exception as e:
+        print(f"⚠️ Embedding classification failed: {e}")
+        return categorize_email(subject, sender)  # fallback
+
+
+def fetch_emails():
+    """Authenticate, fetch emails, classify and visualize."""
+    creds = authenticate()
+    from googleapiclient.discovery import build
+    service = build('gmail', 'v1', credentials=creds)
+    redis_conn = connect_to_redis()
+
+    results = service.users().messages().list(userId='me', maxResults=10).execute()
+    messages = results.get('messages', [])
+
+    categorized = []
+
+    for msg in messages:
+        msg_detail = service.users().messages().get(userId='me', id=msg['id'], format='metadata').execute()
+        headers = msg_detail['payload']['headers']
+        subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '')
+        sender = next((h['value'] for h in headers if h['name'] == 'From'), '')
+
+        category = classify_with_embedding(subject, sender)
+        categorized.append(category)
+
+    counter = Counter(categorized)
+    plot_email_categories(counter)
+
+
+if __name__ == "__main__":
     fetch_emails()
-
-    assert mock_process_email_with_cache.call_count == 2
-    mock_plot_chart.assert_called_once()
